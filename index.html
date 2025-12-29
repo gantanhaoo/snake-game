@@ -335,14 +335,14 @@
                 );
 
                 if (isHead) {
-                    gradient.addColorStop(0, '#00ff88');
-                    gradient.addColorStop(1, '#00cc6a');
-                    ctx.shadowColor = '#00ff88';
-                    ctx.shadowBlur = 15;
+                    gradient.addColorStop(0, '#ffff00');
+                    gradient.addColorStop(1, '#ffa500');
+                    ctx.shadowColor = '#ffff00';
+                    ctx.shadowBlur = 20;
                 } else {
-                    const alpha = 1 - (index / snake.length) * 0.5;
-                    gradient.addColorStop(0, `rgba(0, 255, 136, ${alpha})`);
-                    gradient.addColorStop(1, `rgba(0, 180, 100, ${alpha})`);
+                    const alpha = 1 - (index / snake.length) * 0.3;
+                    gradient.addColorStop(0, `rgba(255, 220, 0, ${alpha})`);
+                    gradient.addColorStop(1, `rgba(255, 150, 0, ${alpha})`);
                 }
 
                 ctx.fillStyle = gradient;
