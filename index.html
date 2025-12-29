@@ -14,7 +14,51 @@
     <meta name="wechat-enable-text-zoom" content="false">
     <meta name="referrer" content="no-referrer">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <!-- 微信安全策略相关 -->
+    <meta name="apple-itunes-app" content="app-id=414478124">
+    <meta name="robots" content="index,follow">
+    <meta name="googlebot" content="index,follow">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="贪吃蛇游戏">
+    <meta property="og:description" content="经典贪吃蛇游戏，支持移动端和桌面端">
+    <meta property="og:url" content="https://gantanhaoo.github.io/snake-game/">
+    <meta property="og:site_name" content="贪吃蛇游戏">
+    <meta property="og:image" content="https://gantanhaoo.github.io/snake-game/og-image.png">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="贪吃蛇游戏">
+    <meta name="twitter:description" content="经典贪吃蛇游戏，支持移动端和桌面端">
+    <!-- 微信WebView优化 -->
+    <meta name="renderer" content="webkit">
+    <meta name="force-rendering" content="webkit">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>贪吃蛇游戏</title>
+    <!-- 内联关键脚本，防止微信拦截 -->
+    <script>
+        // 立即检测微信环境并优化显示
+        (function() {
+            var isWeChat = /micromessenger/i.test(navigator.userAgent);
+            if (isWeChat) {
+                // 立即设置body可见
+                document.addEventListener('DOMContentLoaded', function() {
+                    document.body.style.display = 'block';
+                    document.body.style.visibility = 'visible';
+                });
+                // 如果body已存在，立即设置
+                if (document.body) {
+                    document.body.style.display = 'block';
+                    document.body.style.visibility = 'visible';
+                }
+                // 阻止微信的默认手势
+                document.addEventListener('touchstart', function(e) {
+                    if (e.touches.length > 1) {
+                        e.preventDefault();
+                    }
+                }, { passive: false });
+            }
+        })();
+    </script>
     <style>
         * {
             margin: 0;
@@ -260,9 +304,18 @@
             return /micromessenger/.test(ua);
         }
 
-        // 如果在微信中，添加特殊类名
+        // 如果在微信中，立即添加特殊类名并优化显示
         if (isWeChat()) {
             document.body.classList.add('wechat-mobile');
+            // 立即显示body，防止微信拦截
+            document.body.style.display = 'block';
+            document.body.style.visibility = 'visible';
+            // 阻止微信的默认手势
+            document.addEventListener('touchstart', function(e) {
+                if (e.touches.length > 1) {
+                    e.preventDefault();
+                }
+            }, { passive: false });
         }
 
         let snake = [];
@@ -719,32 +772,87 @@
             setTimeout(resizeCanvas, 100);
         });
 
-        // Initial setup - 延迟初始化确保微信环境加载完成
+        // Initial setup - 针对微信优化初始化流程
         function init() {
-            resizeCanvas();
-            initGame();
-            draw();
-            
-            // 如果在微信中，确保移动端控制显示
-            if (isWeChat()) {
-                const mobileControls = document.querySelector('.mobile-controls');
-                if (mobileControls) {
-                    mobileControls.style.display = 'block';
+            try {
+                resizeCanvas();
+                initGame();
+                draw();
+                
+                // 如果在微信中，确保移动端控制显示
+                if (isWeChat()) {
+                    const mobileControls = document.querySelector('.mobile-controls');
+                    if (mobileControls) {
+                        mobileControls.style.display = 'block';
+                    }
+                    const controls = document.querySelector('.controls');
+                    if (controls) {
+                        controls.style.display = 'none';
+                    }
+                    
+                    // 尝试使用微信JSBridge
+                    if (typeof WeixinJSBridge !== 'undefined') {
+                        WeixinJSBridge.ready(function() {
+                            WeixinJSBridge.invoke('hideOptionMenu', {}, function() {});
+                        });
+                    }
+                    
+                    // 确保页面可见
+                    document.body.style.display = 'block';
+                    document.body.style.visibility = 'visible';
                 }
-                const controls = document.querySelector('.controls');
-                if (controls) {
-                    controls.style.display = 'none';
-                }
+            } catch (e) {
+                console.error('初始化错误:', e);
+                // 即使出错也尝试显示内容
+                document.body.style.display = 'block';
             }
         }
         
-        // 等待DOM和资源加载完成
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', init);
-        } else {
-            // 延迟一点确保微信环境完全初始化
-            setTimeout(init, 100);
-        }
+        // 页面加载时立即执行，避免被微信拦截
+        (function() {
+            // 立即设置页面可见性，防止微信拦截
+            if (!document.hidden) {
+                document.title = '贪吃蛇游戏';
+                document.body.style.display = 'block';
+            }
+            
+            // 监听页面可见性变化
+            document.addEventListener('visibilitychange', function() {
+                if (!document.hidden) {
+                    document.title = '贪吃蛇游戏';
+                    document.body.style.display = 'block';
+                    // 如果游戏未初始化，立即初始化
+                    if (snake.length === 0) {
+                        init();
+                    }
+                }
+            });
+            
+            // 在微信中，立即执行初始化，避免被拦截
+            if (isWeChat()) {
+                // 立即显示body
+                document.body.style.display = 'block';
+                document.body.style.visibility = 'visible';
+                
+                // 立即初始化（不等待DOMContentLoaded）
+                if (document.readyState === 'loading') {
+                    // 如果DOM还在加载，等待DOMContentLoaded
+                    document.addEventListener('DOMContentLoaded', function() {
+                        setTimeout(init, 50);
+                    });
+                } else {
+                    // DOM已加载，立即初始化
+                    setTimeout(init, 50);
+                }
+            } else {
+                // 非微信环境，正常初始化
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', init);
+                } else {
+                    setTimeout(init, 100);
+                }
+            }
+        })();
     </script>
 </body>
 </html>
