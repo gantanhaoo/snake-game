@@ -259,13 +259,16 @@
         function resizeCanvas() {
             const maxSize = Math.min(window.innerWidth * 0.95, window.innerHeight * 0.5, 400);
             const size = Math.floor(maxSize / gridSize) * gridSize;
+            const oldTileCount = tileCount;
             canvas.width = size;
             canvas.height = size;
             tileCount = size / gridSize;
-            if (!isPlaying) {
+            
+            // 如果画布大小改变，重新初始化游戏
+            if (oldTileCount !== tileCount || snake.length === 0) {
                 initGame();
-                draw();
             }
+            draw();
         }
 
         function initGame() {
@@ -322,59 +325,65 @@
             ctx.fill();
             ctx.shadowBlur = 0;
 
-            // Draw snake
+            // Draw snake - 使用简单的矩形绘制以确保移动端兼容性
             snake.forEach((segment, index) => {
                 const isHead = index === 0;
-                const x = segment.x * gridSize + 1;
-                const y = segment.y * gridSize + 1;
-                const size = gridSize - 2;
+                const x = segment.x * gridSize + 2;
+                const y = segment.y * gridSize + 2;
+                const size = gridSize - 4;
 
-                // Use simple solid colors for better mobile compatibility
+                // 使用更亮的颜色确保在深色背景上清晰可见
                 if (isHead) {
-                    ctx.fillStyle = '#ffff00';
+                    ctx.fillStyle = '#00ff88'; // 使用绿色头部，与主题色一致
                 } else {
-                    ctx.fillStyle = '#ffa500';
+                    ctx.fillStyle = '#00cc6a'; // 使用稍深的绿色作为身体
                 }
 
-                // Draw rounded rectangle manually for compatibility
-                const radius = 4;
-                ctx.beginPath();
-                ctx.moveTo(x + radius, y);
-                ctx.lineTo(x + size - radius, y);
-                ctx.arcTo(x + size, y, x + size, y + radius, radius);
-                ctx.lineTo(x + size, y + size - radius);
-                ctx.arcTo(x + size, y + size, x + size - radius, y + size, radius);
-                ctx.lineTo(x + radius, y + size);
-                ctx.arcTo(x, y + size, x, y + size - radius, radius);
-                ctx.lineTo(x, y + radius);
-                ctx.arcTo(x, y, x + radius, y, radius);
-                ctx.closePath();
-                ctx.fill();
+                // 使用简单的 fillRect 确保所有移动浏览器都能正常显示
+                ctx.fillRect(x, y, size, size);
+
+                // 为蛇身添加边框以增强可见性
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 1;
+                ctx.strokeRect(x, y, size, size);
 
                 // Draw eyes on head
                 if (isHead) {
                     ctx.fillStyle = '#000000';
-                    const eyeSize = 3;
+                    const eyeSize = 2;
+                    const eyeOffset = 4;
 
                     if (direction.x === 1) {
+                        // 向右
                         ctx.beginPath();
-                        ctx.arc(segment.x * gridSize + gridSize - 6, segment.y * gridSize + 6, eyeSize, 0, Math.PI * 2);
-                        ctx.arc(segment.x * gridSize + gridSize - 6, segment.y * gridSize + gridSize - 6, eyeSize, 0, Math.PI * 2);
+                        ctx.arc(segment.x * gridSize + gridSize - eyeOffset, segment.y * gridSize + eyeOffset, eyeSize, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.beginPath();
+                        ctx.arc(segment.x * gridSize + gridSize - eyeOffset, segment.y * gridSize + gridSize - eyeOffset, eyeSize, 0, Math.PI * 2);
                         ctx.fill();
                     } else if (direction.x === -1) {
+                        // 向左
                         ctx.beginPath();
-                        ctx.arc(segment.x * gridSize + 6, segment.y * gridSize + 6, eyeSize, 0, Math.PI * 2);
-                        ctx.arc(segment.x * gridSize + 6, segment.y * gridSize + gridSize - 6, eyeSize, 0, Math.PI * 2);
+                        ctx.arc(segment.x * gridSize + eyeOffset, segment.y * gridSize + eyeOffset, eyeSize, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.beginPath();
+                        ctx.arc(segment.x * gridSize + eyeOffset, segment.y * gridSize + gridSize - eyeOffset, eyeSize, 0, Math.PI * 2);
                         ctx.fill();
                     } else if (direction.y === -1) {
+                        // 向上
                         ctx.beginPath();
-                        ctx.arc(segment.x * gridSize + 6, segment.y * gridSize + 6, eyeSize, 0, Math.PI * 2);
-                        ctx.arc(segment.x * gridSize + gridSize - 6, segment.y * gridSize + 6, eyeSize, 0, Math.PI * 2);
+                        ctx.arc(segment.x * gridSize + eyeOffset, segment.y * gridSize + eyeOffset, eyeSize, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.beginPath();
+                        ctx.arc(segment.x * gridSize + gridSize - eyeOffset, segment.y * gridSize + eyeOffset, eyeSize, 0, Math.PI * 2);
                         ctx.fill();
                     } else {
+                        // 向下或初始状态
                         ctx.beginPath();
-                        ctx.arc(segment.x * gridSize + 6, segment.y * gridSize + gridSize - 6, eyeSize, 0, Math.PI * 2);
-                        ctx.arc(segment.x * gridSize + gridSize - 6, segment.y * gridSize + gridSize - 6, eyeSize, 0, Math.PI * 2);
+                        ctx.arc(segment.x * gridSize + eyeOffset, segment.y * gridSize + gridSize - eyeOffset, eyeSize, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.beginPath();
+                        ctx.arc(segment.x * gridSize + gridSize - eyeOffset, segment.y * gridSize + gridSize - eyeOffset, eyeSize, 0, Math.PI * 2);
                         ctx.fill();
                     }
                 }
