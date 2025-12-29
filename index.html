@@ -2,9 +2,16 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="mobile-web-app-capable" content="yes">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="x5-orientation" content="portrait">
+    <meta name="x5-fullscreen" content="true">
+    <meta name="x5-page-mode" content="app">
+    <!-- 微信相关 -->
+    <meta name="wechat-enable-text-zoom" content="false">
     <title>贪吃蛇游戏</title>
     <style>
         * {
@@ -172,7 +179,7 @@
             justify-content: center;
         }
 
-        /* Show mobile controls on touch devices */
+        /* Show mobile controls on touch devices and WeChat */
         @media (hover: none) and (pointer: coarse) {
             .mobile-controls {
                 display: block;
@@ -180,6 +187,14 @@
             .controls {
                 display: none;
             }
+        }
+
+        /* 强制在微信中显示移动端控制 */
+        .wechat-mobile .mobile-controls {
+            display: block !important;
+        }
+        .wechat-mobile .controls {
+            display: none !important;
         }
 
         @media (max-width: 500px) {
@@ -237,12 +252,41 @@
         const gridSize = 20;
         let tileCount = canvas.width / gridSize;
 
+        // 检测是否在微信环境中
+        function isWeChat() {
+            const ua = navigator.userAgent.toLowerCase();
+            return /micromessenger/.test(ua);
+        }
+
+        // 如果在微信中，添加特殊类名
+        if (isWeChat()) {
+            document.body.classList.add('wechat-mobile');
+        }
+
         let snake = [];
         let food = {};
         let direction = { x: 0, y: 0 };
         let nextDirection = { x: 0, y: 0 };
         let score = 0;
-        let highScore = localStorage.getItem('snakeHighScore') || 0;
+        
+        // 安全获取localStorage，处理微信可能的限制
+        function getHighScore() {
+            try {
+                return parseInt(localStorage.getItem('snakeHighScore') || '0', 10);
+            } catch (e) {
+                return 0;
+            }
+        }
+        
+        function setHighScore(score) {
+            try {
+                localStorage.setItem('snakeHighScore', score.toString());
+            } catch (e) {
+                console.warn('无法保存最高分:', e);
+            }
+        }
+        
+        let highScore = getHighScore();
         let gameLoop = null;
         let gameSpeed = 100;
         let isPlaying = false;
@@ -255,9 +299,13 @@
 
         highScoreEl.textContent = highScore;
 
-        // Responsive canvas sizing
+        // Responsive canvas sizing - 针对微信优化
         function resizeCanvas() {
-            const maxSize = Math.min(window.innerWidth * 0.95, window.innerHeight * 0.5, 400);
+            // 在微信中，需要考虑安全区域和状态栏
+            const isWeChatEnv = isWeChat();
+            const maxWidth = window.innerWidth * (isWeChatEnv ? 0.92 : 0.95);
+            const maxHeight = (window.innerHeight * (isWeChatEnv ? 0.45 : 0.5));
+            const maxSize = Math.min(maxWidth, maxHeight, 400);
             const size = Math.floor(maxSize / gridSize) * gridSize;
             const oldTileCount = tileCount;
             canvas.width = size;
@@ -444,7 +492,7 @@
 
             if (score > highScore) {
                 highScore = score;
-                localStorage.setItem('snakeHighScore', highScore);
+                setHighScore(highScore);
                 highScoreEl.textContent = highScore;
             }
 
@@ -529,20 +577,30 @@
             }
         });
 
-        // Touch swipe controls on canvas
+        // Touch swipe controls on canvas - 优化微信触摸事件
         canvas.addEventListener('touchstart', (e) => {
             e.preventDefault();
-            const touch = e.touches[0];
-            touchStartX = touch.clientX;
-            touchStartY = touch.clientY;
+            e.stopPropagation();
+            if (e.touches && e.touches.length > 0) {
+                const touch = e.touches[0];
+                touchStartX = touch.clientX;
+                touchStartY = touch.clientY;
+            }
         }, { passive: false });
 
         canvas.addEventListener('touchmove', (e) => {
             e.preventDefault();
+            e.stopPropagation();
         }, { passive: false });
 
         canvas.addEventListener('touchend', (e) => {
             e.preventDefault();
+            e.stopPropagation();
+            
+            if (!e.changedTouches || e.changedTouches.length === 0) {
+                return;
+            }
+            
             if (!isPlaying) {
                 startGame();
                 return;
@@ -562,11 +620,19 @@
                 setDirection(deltaY > 0 ? 'down' : 'up');
             }
         }, { passive: false });
+        
+        // 添加点击事件作为备用（微信中可能需要）
+        canvas.addEventListener('click', (e) => {
+            if (!isPlaying) {
+                startGame();
+            }
+        });
 
-        // D-pad button controls
+        // D-pad button controls - 优化微信触摸事件
         document.querySelectorAll('.d-pad-btn').forEach(btn => {
             btn.addEventListener('touchstart', (e) => {
                 e.preventDefault();
+                e.stopPropagation();
                 const dir = btn.dataset.dir;
                 if (dir) {
                     setDirection(dir);
@@ -576,32 +642,74 @@
 
             btn.addEventListener('touchend', (e) => {
                 e.preventDefault();
+                e.stopPropagation();
+                btn.style.background = 'rgba(0, 255, 136, 0.2)';
+            }, { passive: false });
+
+            btn.addEventListener('touchcancel', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
                 btn.style.background = 'rgba(0, 255, 136, 0.2)';
             }, { passive: false });
 
             btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
                 const dir = btn.dataset.dir;
                 if (dir) setDirection(dir);
             });
         });
 
-        // D-pad center (pause) button
-        document.querySelector('.d-pad-center').addEventListener('click', togglePause);
-        document.querySelector('.d-pad-center').addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            togglePause();
-        }, { passive: false });
+        // D-pad center (pause) button - 优化微信触摸事件
+        const pauseBtn = document.querySelector('.d-pad-center');
+        if (pauseBtn) {
+            pauseBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                togglePause();
+            });
+            pauseBtn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                togglePause();
+            }, { passive: false });
+        }
 
-        startBtn.addEventListener('click', () => {
+        startBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
             if (!isPlaying) {
                 startGame();
             }
         });
-
-        // Prevent default touch behaviors
-        document.addEventListener('touchmove', (e) => {
-            if (isPlaying) e.preventDefault();
+        
+        // 添加触摸事件支持
+        startBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (!isPlaying) {
+                startGame();
+            }
         }, { passive: false });
+
+        // Prevent default touch behaviors - 优化微信环境
+        document.addEventListener('touchmove', (e) => {
+            // 只在游戏区域阻止默认行为
+            if (isPlaying && (e.target === canvas || e.target.closest('.d-pad'))) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+        
+        // 阻止微信的默认手势
+        document.addEventListener('gesturestart', (e) => {
+            e.preventDefault();
+        });
+        document.addEventListener('gesturechange', (e) => {
+            e.preventDefault();
+        });
+        document.addEventListener('gestureend', (e) => {
+            e.preventDefault();
+        });
 
         // Handle resize
         window.addEventListener('resize', resizeCanvas);
@@ -609,10 +717,32 @@
             setTimeout(resizeCanvas, 100);
         });
 
-        // Initial setup
-        resizeCanvas();
-        initGame();
-        draw();
+        // Initial setup - 延迟初始化确保微信环境加载完成
+        function init() {
+            resizeCanvas();
+            initGame();
+            draw();
+            
+            // 如果在微信中，确保移动端控制显示
+            if (isWeChat()) {
+                const mobileControls = document.querySelector('.mobile-controls');
+                if (mobileControls) {
+                    mobileControls.style.display = 'block';
+                }
+                const controls = document.querySelector('.controls');
+                if (controls) {
+                    controls.style.display = 'none';
+                }
+            }
+        }
+        
+        // 等待DOM和资源加载完成
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            // 延迟一点确保微信环境完全初始化
+            setTimeout(init, 100);
+        }
     </script>
 </body>
 </html>
