@@ -325,41 +325,35 @@
             // Draw snake
             snake.forEach((segment, index) => {
                 const isHead = index === 0;
-                const gradient = ctx.createRadialGradient(
-                    segment.x * gridSize + gridSize / 2,
-                    segment.y * gridSize + gridSize / 2,
-                    0,
-                    segment.x * gridSize + gridSize / 2,
-                    segment.y * gridSize + gridSize / 2,
-                    gridSize / 2
-                );
+                const x = segment.x * gridSize + 1;
+                const y = segment.y * gridSize + 1;
+                const size = gridSize - 2;
 
+                // Use simple solid colors for better mobile compatibility
                 if (isHead) {
-                    gradient.addColorStop(0, '#ffff00');
-                    gradient.addColorStop(1, '#ffa500');
-                    ctx.shadowColor = '#ffff00';
-                    ctx.shadowBlur = 20;
+                    ctx.fillStyle = '#ffff00';
                 } else {
-                    const alpha = 1 - (index / snake.length) * 0.3;
-                    gradient.addColorStop(0, `rgba(255, 220, 0, ${alpha})`);
-                    gradient.addColorStop(1, `rgba(255, 150, 0, ${alpha})`);
+                    ctx.fillStyle = '#ffa500';
                 }
 
-                ctx.fillStyle = gradient;
+                // Draw rounded rectangle manually for compatibility
+                const radius = 4;
                 ctx.beginPath();
-                ctx.roundRect(
-                    segment.x * gridSize + 1,
-                    segment.y * gridSize + 1,
-                    gridSize - 2,
-                    gridSize - 2,
-                    5
-                );
+                ctx.moveTo(x + radius, y);
+                ctx.lineTo(x + size - radius, y);
+                ctx.arcTo(x + size, y, x + size, y + radius, radius);
+                ctx.lineTo(x + size, y + size - radius);
+                ctx.arcTo(x + size, y + size, x + size - radius, y + size, radius);
+                ctx.lineTo(x + radius, y + size);
+                ctx.arcTo(x, y + size, x, y + size - radius, radius);
+                ctx.lineTo(x, y + radius);
+                ctx.arcTo(x, y, x + radius, y, radius);
+                ctx.closePath();
                 ctx.fill();
-                ctx.shadowBlur = 0;
 
                 // Draw eyes on head
                 if (isHead) {
-                    ctx.fillStyle = '#1a1a2e';
+                    ctx.fillStyle = '#000000';
                     const eyeSize = 3;
 
                     if (direction.x === 1) {
