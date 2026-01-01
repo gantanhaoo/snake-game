@@ -68,14 +68,16 @@
         }
 
         body {
-            display: flex;
+            display: flex !important;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
             background: #1a1a2e;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            overflow: hidden;
-            touch-action: none;
+            overflow-x: hidden;
+            overflow-y: auto;
+            touch-action: manipulation;
+            -webkit-overflow-scrolling: touch;
         }
 
         .game-container {
@@ -352,6 +354,16 @@
             margin-top: 15px;
             user-select: none;
         }
+        
+        /* 移动端默认显示控制按钮 */
+        @media screen and (max-width: 768px) {
+            .mobile-controls {
+                display: block !important;
+            }
+            .controls {
+                display: none !important;
+            }
+        }
 
         .d-pad {
             display: grid;
@@ -404,10 +416,20 @@
         /* Show mobile controls on touch devices and WeChat */
         @media (hover: none) and (pointer: coarse) {
             .mobile-controls {
-                display: block;
+                display: block !important;
             }
             .controls {
-                display: none;
+                display: none !important;
+            }
+        }
+        
+        /* 移动端强制显示控制按钮 - 更广泛的兼容性 */
+        @media screen and (max-width: 768px) {
+            .mobile-controls {
+                display: block !important;
+            }
+            .controls {
+                display: none !important;
             }
         }
 
@@ -1586,8 +1608,9 @@
                 initGame();
                 draw();
                 
-                // 如果在微信中，确保移动端控制显示
-                if (isWeChat()) {
+                // 确保移动端控制显示（所有移动设备）
+                const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
+                if (isMobile || isWeChat()) {
                     const mobileControls = document.querySelector('.mobile-controls');
                     if (mobileControls) {
                         mobileControls.style.display = 'block';
@@ -1596,7 +1619,10 @@
                     if (controls) {
                         controls.style.display = 'none';
                     }
-                    
+                }
+                
+                // 微信特殊处理
+                if (isWeChat()) {
                     // 尝试使用微信JSBridge
                     if (typeof WeixinJSBridge !== 'undefined') {
                         WeixinJSBridge.ready(function() {
