@@ -116,8 +116,29 @@ Vercel 可能需要你手动触发一次。有两种方法：
 ✅ `.github/workflows/netlify-deploy.yml` - Netlify 自动部署
 ✅ `.github/workflows/cloudflare-deploy.yml` - Cloudflare Pages 自动部署
 ✅ `netlify.toml` - Netlify 配置
+✅ `setup-cloudflare.js` - Cloudflare 配置检查脚本
+✅ `check-cloudflare-config.js` - 配置验证脚本
+✅ `CLOUDFLARE_PAGES_SETUP.md` - Cloudflare Pages 详细部署指南
+✅ `QUICK_START_CLOUDFLARE.md` - Cloudflare Pages 快速开始指南
 
-**所有配置文件都已创建！** 你只需要：
+**所有配置文件都已创建！** 
+
+### 🚀 Cloudflare Pages 快速开始
+
+1. **运行配置检查**：
+   ```bash
+   node setup-cloudflare.js
+   ```
+
+2. **按照 `QUICK_START_CLOUDFLARE.md` 中的步骤操作**
+
+3. **或者使用 Dashboard 方式**（推荐，最简单）：
+   - 访问 https://dash.cloudflare.com
+   - 连接 GitHub 仓库
+   - 一键部署完成
+
+### 其他部署方式
+
 1. 推送代码到 GitHub
 2. 配置相应的 Secrets（如果需要）
 3. 等待自动部署完成
@@ -132,5 +153,7 @@ Vercel 可能需要你手动触发一次。有两种方法：
 3. 应该能正常访问！
 
 告诉我你选择了哪个方案，或者遇到了什么问题，我会继续帮你！
+
+
 
 
